@@ -6,7 +6,7 @@ from bosdyn.client.robot_command import RobotCommandClient
 from bosdyn.client.robot_state import RobotStateClient
 
 from common.spot_functions.base_spot_function import BaseSpotFunction
-from common.spot_movements import make_robot_stand
+from common.spot_actions.base_unit import make_robot_stand
 from common.spot_power import power_on_robot, power_off_robot
 
 

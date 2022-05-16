@@ -95,10 +95,9 @@ def make_robot_walk_x(
         frame_name: str,
         robot_command_client: RobotCommandClient
 ):
-
     # Build the transform for where we want the robot to be relative to where the body currently is.
     body_tform_goal = math_helpers.SE2Pose(x=dx, y=0, angle=0)
-    make_robot_walk(body_tform_goal, robot_state_client, frame_name, robot_command_client)
+    make_robot_walk_to_pose(body_tform_goal, robot_state_client, frame_name, robot_command_client)
 
 
 def make_robot_walk_y(
@@ -107,10 +106,9 @@ def make_robot_walk_y(
         frame_name: str,
         robot_command_client: RobotCommandClient
 ):
-
     # Build the transform for where we want the robot to be relative to where the body currently is.
     body_tform_goal = math_helpers.SE2Pose(x=0, y=dy, angle=0)
-    make_robot_walk(body_tform_goal, robot_state_client, frame_name, robot_command_client)
+    make_robot_walk_to_pose(body_tform_goal, robot_state_client, frame_name, robot_command_client)
 
 
 def make_robot_turn(
@@ -119,7 +117,20 @@ def make_robot_turn(
         frame_name: str,
         robot_command_client: RobotCommandClient
 ):
-
     # Build the transform for where we want the robot to be relative to where the body currently is.
     body_tform_goal = math_helpers.SE2Pose(x=0, y=0, angle=yaw)
-    make_robot_walk(body_tform_goal, robot_state_client, frame_name, robot_command_client)
+    make_robot_walk_to_pose(body_tform_goal, robot_state_client, frame_name, robot_command_client)
+
+
+def make_robot_walk_to_pose(
+        dx: float,
+        dy: float,
+        yaw: float,
+        robot_state_client: RobotStateClient,
+        frame_name: str,
+        robot_command_client: RobotCommandClient
+):
+
+    # Build the transform for where we want the robot to be relative to where the body currently is.
+    body_tform_goal = math_helpers.SE2Pose(x=dx, y=dy, angle=yaw)
+    make_robot_walk_to_pose(body_tform_goal, robot_state_client, frame_name, robot_command_client)
