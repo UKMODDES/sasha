@@ -1,1 +1,1 @@
-Repository for Sasha team spot dog in hackathon
+Repository for Sasha team spot dog in hackathon.
