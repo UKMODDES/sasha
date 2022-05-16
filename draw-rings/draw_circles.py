@@ -106,7 +106,7 @@ def setup_arm_movement(config):
 
         x0 = 0
         y0 = 0
-        radius = 0.12
+        radius = 0.06
         x_ = np.arange(x0 - radius - 1, x0 + radius + 1, dtype=int)
         y_ = np.arange(y0 - radius - 1, y0 + radius + 1, dtype=int)
         x, y = np.where((x_[:,np.newaxis] - x0)**2 + (y_ - y0)**2 <= radius**2)
