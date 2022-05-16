@@ -2,6 +2,7 @@ import bosdyn.client
 import bosdyn.client.util
 import bosdyn.client.lease
 from bosdyn.client import Robot
+from bosdyn.client.robot_command import RobotCommandClient
 from bosdyn.client.robot_state import RobotStateClient
 
 from common.spot_functions.base_spot_function import BaseSpotFunction
@@ -20,8 +21,9 @@ def execute_function_for_robot(
     with bosdyn.client.lease.LeaseKeepAlive(lease_client, must_acquire=True, return_at_exit=True):
         power_on_robot(robot)
         try:
-            make_robot_stand(robot)
-            spot_function.prepare(robot_state_client, lease_client, robot)
+            command_client = robot.ensure_client(RobotCommandClient.default_service_name)
+            make_robot_stand(robot, command_client)
+            spot_function.prepare(robot, robot_state_client, lease_client, command_client)
             spot_function.execute(args)
         finally:
             power_off_robot(robot)
