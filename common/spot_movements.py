@@ -5,6 +5,7 @@ from bosdyn.api.trajectory_pb2 import SE3Trajectory
 from bosdyn.client import Robot
 from bosdyn.client.frame_helpers import ODOM_FRAME_NAME
 from bosdyn.client.robot_command import RobotCommandClient, blocking_stand, RobotCommandBuilder, block_until_arm_arrives
+from bosdyn.client.image import ImageClient
 
 
 def make_robot_stand(
