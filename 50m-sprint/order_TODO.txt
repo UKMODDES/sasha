@@ -1,0 +1,2 @@
+1. Containerise using podman on Chris' laptop
+2. If needed run on NVIDIA Docker
