@@ -1,11 +1,16 @@
 import time
 
+from bosdyn.api import basic_command_pb2
 from bosdyn.api.basic_command_pb2 import RobotCommandFeedbackStatus
+from bosdyn.api.robot_command_pb2 import RobotCommand
+from bosdyn.api.spot.robot_command_pb2 import MobilityParams, HINT_AUTO, HINT_SPEED_SELECT_TROT, HINT_CRAWL, HINT_AMBLE, \
+    HINT_JOG, HINT_HOP
 from bosdyn.client import Robot, frame_helpers, math_helpers
 from bosdyn.client.frame_helpers import get_se2_a_tform_b, BODY_FRAME_NAME
 from bosdyn.client.math_helpers import SE2Pose
 from bosdyn.client.robot_command import RobotCommandClient, blocking_stand, RobotCommandBuilder
 from bosdyn.client.robot_state import RobotStateClient
+from bosdyn.geometry import EulerZXY
 from numpy.random._examples.cffi.extending import state
 
 
@@ -134,3 +139,120 @@ def make_robot_walk_to_pose(
     # Build the transform for where we want the robot to be relative to where the body currently is.
     body_tform_goal = math_helpers.SE2Pose(x=dx, y=dy, angle=yaw)
     make_robot_walk_to_pose(body_tform_goal, robot_state_client, frame_name, robot_command_client)
+
+
+def _issue_command(
+        command_client: RobotCommandClient,
+        command: RobotCommand
+):
+    command_client.robot_command_async(command, end_time_secs=None)
+
+
+def make_robot_roll_over(
+        command_client: RobotCommandClient
+):
+    """Executes the battery-change pose command which causes the robot to sit down if
+    standing then roll to its [right]/left side for easier battery changing.
+    """
+
+    command = RobotCommandBuilder.battery_change_pose_command(
+        dir_hint=basic_command_pb2.BatteryChangePoseCommand.Request.HINT_RIGHT)
+    _issue_command(command_client, command)
+
+
+def make_robot_selfright(
+        command_client: RobotCommandClient
+):
+    """Executes selfright command, which causes the robot to automatically turn if
+    it is on its back.
+    """
+
+    command = RobotCommandBuilder.selfright_command()
+    _issue_command(command_client, command)
+
+
+def make_robot_sit(
+        command_client: RobotCommandClient
+):
+    mobility_params = MobilityParams(
+        locomotion_hint=HINT_AUTO, stair_hint=0)
+
+    cmd = RobotCommandBuilder.synchro_sit_command(params=mobility_params)
+    _issue_command(command_client, cmd)
+
+
+def set_robot_to_walk_mode(
+        command_client: RobotCommandClient
+):
+    mobility_params = MobilityParams(
+                locomotion_hint=HINT_SPEED_SELECT_TROT, stair_hint=0)
+
+    cmd = RobotCommandBuilder.synchro_stand_command(params=mobility_params)
+    _issue_command(command_client, cmd)
+
+
+def set_robot_to_crawl_mode(
+        command_client: RobotCommandClient
+):
+    mobility_params = MobilityParams(
+        locomotion_hint=HINT_CRAWL, stair_hint=0)
+
+    cmd = RobotCommandBuilder.synchro_stand_command(params=mobility_params)
+    _issue_command(command_client, cmd)
+
+
+def set_robot_to_amble_mode(
+        command_client: RobotCommandClient
+):
+    mobility_params = MobilityParams(
+        locomotion_hint=HINT_AMBLE, stair_hint=0)
+
+    cmd = RobotCommandBuilder.synchro_stand_command(params=mobility_params)
+    _issue_command(command_client, cmd)
+
+
+def set_robot_orientation(
+        command_client: RobotCommandClient,
+        yaw=0.0,
+        roll=0.0,
+        pitch=0.0,
+        height=0.0
+):
+    orientation = EulerZXY(yaw, roll, pitch)
+    cmd = RobotCommandBuilder.synchro_stand_command(body_height=height,
+                                                    footprint_R_body=orientation)
+    _issue_command(command_client, cmd)
+
+
+def make_robot_reset_height(
+        command_client: RobotCommandClient
+):
+    set_robot_orientation(command_client, height=0.0)
+
+
+def set_robot_to_jog_mode(
+        command_client: RobotCommandClient
+):
+    make_robot_reset_height(command_client)
+    mobility_params = MobilityParams(
+        locomotion_hint=HINT_JOG, stair_hint=0)
+    cmd = RobotCommandBuilder.synchro_stand_command(params=mobility_params)
+    _issue_command(command_client, cmd)
+
+
+def set_robot_to_hop_mode(
+        command_client: RobotCommandClient
+):
+    make_robot_reset_height(command_client)
+    mobility_params = MobilityParams(
+        locomotion_hint=HINT_HOP, stair_hint=0)
+
+    cmd = RobotCommandBuilder.synchro_stand_command(params=mobility_params)
+    _issue_command(command_client, cmd)
+
+
+def make_robot_change_height(
+        command_client: RobotCommandClient,
+        new_height: float
+):
+    set_robot_orientation(command_client, height=new_height)
