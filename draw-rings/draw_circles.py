@@ -14,7 +14,7 @@ import numpy as np
 import bosdyn.client
 import bosdyn.client.lease
 import bosdyn.client.util
-from bosdyn.api import basic_command_pb2, robot_command_pb2
+from bosdyn.api import robot_command_pb2
 from bosdyn.api.geometry_pb2 import SE2Velocity, SE2VelocityLimit, Vec2
 from bosdyn.api.spot import robot_command_pb2 as spot_command_pb2
 from bosdyn.client.frame_helpers import VISION_FRAME_NAME, get_vision_tform_body
@@ -97,10 +97,6 @@ def setup_arm_movement(config):
         x_vals = np.array([0, 1, 1, 0, 0])
         y_vals = np.array([0, 0, 1, 1, 0])
 
-        # duration in seconds for each move
-        seconds_arm = _SECONDS_FULL / (_N_POINTS + 1)
-        seconds_body = _SECONDS_FULL / x_vals.size
-
         # Commands will be sent in the visual odometry ("vision") frame
         frame_name = VISION_FRAME_NAME
 
@@ -108,6 +104,9 @@ def setup_arm_movement(config):
         # x will be the same for each point
         x = _L_ROBOT_SQUARE + 0.5
 
+        x0 = 0
+        y0 = 0
+        radius = 0.12
         x_ = np.arange(x0 - radius - 1, x0 + radius + 1, dtype=int)
         y_ = np.arange(y0 - radius - 1, y0 + radius + 1, dtype=int)
         x, y = np.where((x_[:,np.newaxis] - x0)**2 + (y_ - y0)**2 <= radius**2)
@@ -141,6 +140,10 @@ def setup_arm_movement(config):
             point.pose.rotation.y = vision_T_world.rot.y
             point.pose.rotation.z = vision_T_world.rot.z
             point.pose.rotation.w = vision_T_world.rot.w
+
+            # duration in seconds for each move
+            seconds_arm = _SECONDS_FULL / (_N_POINTS + 1)
+            seconds_body = _SECONDS_FULL / x_vals.size
 
             traj_time = (ii + 1) * seconds_arm
             duration = seconds_to_duration(traj_time)
