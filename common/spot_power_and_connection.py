@@ -1,8 +1,12 @@
 import os
+from abc import ABC, abstractmethod
 
 import bosdyn.client
 import bosdyn.client.util
+import bosdyn.client.lease
 from bosdyn.client import Robot
+from bosdyn.client.robot_command import RobotCommandClient, blocking_stand
+from bosdyn.client.robot_state import RobotStateClient
 
 
 def create_robot(
@@ -28,7 +32,32 @@ def connect_to_robot(
     robot.time_sync.wait_for_sync()
 
 
-def get_powered_on_robot(
+def power_on_robot(
+        robot: Robot
+):
+    # Now, we are ready to power on the robot. This call will block until the power
+    # is on. Commands would fail if this did not happen. We can also check that the robot is
+    # powered at any point.
+    robot.logger.info("Powering on robot... This may take a several seconds.")
+    robot.power_on(timeout_sec=20)
+    assert robot.is_powered_on(), "Robot power on failed."
+    robot.logger.info("Robot powered on.")
+
+
+def make_robot_stand(
+        robot: Robot
+):
+    # Tell the robot to stand up. The command service is used to issue commands to a robot.
+    # The set of valid commands for a robot depends on hardware configuration. See
+    # SpotCommandHelper for more detailed examples on command building. The robot
+    # command service requires timesync between the robot and the client.
+    robot.logger.info("Commanding robot to stand...")
+    command_client = robot.ensure_client(RobotCommandClient.default_service_name)
+    blocking_stand(command_client, timeout_sec=10)
+    robot.logger.info("Robot standing.")
+
+
+def get_connected_robot(
         client_name_prefix: str,
         username: str,
         password: str,
@@ -37,10 +66,35 @@ def get_powered_on_robot(
 ) -> Robot:
     robot = create_robot(client_name_prefix, hostname, verbose)
     connect_to_robot(robot, username, password)
-    return Robot
+    return robot
 
 
-def power_down(
+class SpotFunction(ABC):
+    robot_state_client: RobotStateClient = None
+    lease_client: bosdyn.client.lease.LeaseClient = None
+
+    @abstractmethod
+    def execute(self):
+        pass
+
+
+def execute_function_for_robot(
+        robot: Robot,
+        spot_function: SpotFunction
+):
+    robot_state_client = robot.ensure_client(RobotStateClient.default_service_name)
+
+    lease_client = robot.ensure_client(bosdyn.client.lease.LeaseClient.default_service_name)
+    with bosdyn.client.lease.LeaseKeepAlive(lease_client, must_acquire=True, return_at_exit=True):
+        power_on_robot(robot)
+        make_robot_stand(robot)
+        spot_function.robot_state_client = robot_state_client
+        spot_function.lease_client = lease_client
+        spot_function.execute()
+        power_off_robot(robot)
+
+
+def power_off_robot(
         robot: Robot
 ):
     robot.logger.info('Sitting down and turning off.')
