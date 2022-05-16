@@ -9,22 +9,8 @@ from bosdyn.api.trajectory_pb2 import SE3Trajectory
 from bosdyn.client import Robot, math_helpers
 from bosdyn.client.frame_helpers import ODOM_FRAME_NAME, VISION_FRAME_NAME, get_vision_tform_body
 from bosdyn.client.manipulation_api_client import ManipulationApiClient
-from bosdyn.client.robot_command import RobotCommandClient, blocking_stand, RobotCommandBuilder, block_until_arm_arrives
-from bosdyn.client.image import ImageClient
+from bosdyn.client.robot_command import RobotCommandClient, RobotCommandBuilder, block_until_arm_arrives
 from bosdyn.client.robot_state import RobotStateClient
-
-
-def make_robot_stand(
-        robot: Robot,
-        command_client: RobotCommandClient
-):
-    # Tell the robot to stand up. The command service is used to issue commands to a robot.
-    # The set of valid commands for a robot depends on hardware configuration. See
-    # SpotCommandHelper for more detailed examples on command building. The robot
-    # command service requires timesync between the robot and the client.
-    robot.logger.info("Commanding robot to stand...")
-    blocking_stand(command_client, timeout_sec=10)
-    robot.logger.info("Robot standing.")
 
 
 def make_robot_unstow_arm(
@@ -39,25 +25,6 @@ def make_robot_unstow_arm(
 
     robot.logger.info("Unstow command issued.")
     block_until_arm_arrives(command_client, unstow_command_id, 3.0)
-
-
-def make_robot_take_picture(
-        robot: Robot,
-        image_client: ImageClient,
-        image_source: str = 'frontleft_fisheye_image'
-) -> Image:
-    # Take a picture with a camera
-    robot.logger.info('Getting an image from: ' + image_source)
-    image_responses = image_client.get_image_from_sources([image_source])
-
-    if len(image_responses) != 1:
-        print('Got invalid number of images: ' + str(len(image_responses)))
-        print(image_responses)
-        image = None
-    else:
-        image = image_responses[0]
-
-    return image
 
 
 def _add_grasp_constraint(
