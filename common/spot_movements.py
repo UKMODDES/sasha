@@ -34,6 +34,25 @@ def make_robot_unstow_arm(
     block_until_arm_arrives(command_client, unstow_command_id, 3.0)
 
 
+def make_robot_take_picture(
+        robot: Robot,
+        image_client: ImageClient,
+        image_source: str = 'frontleft_fisheye_image'
+):
+    # Take a picture with a camera
+    robot.logger.info('Getting an image from: ' + image_source)
+    image_responses = image_client.get_image_from_sources([image_source])
+
+    if len(image_responses) != 1:
+        print('Got invalid number of images: ' + str(len(image_responses)))
+        print(image_responses)
+        image = None
+    else:
+        image = image_responses[0]
+
+    return image
+
+
 def make_robot_open_gripper(
         hand_pose_trajectory: SE3Trajectory,
         press_force_percentage: Vec3
