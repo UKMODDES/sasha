@@ -72,15 +72,17 @@ def get_connected_robot(
 class SpotFunction(ABC):
     robot_state_client: RobotStateClient = None
     lease_client: bosdyn.client.lease.LeaseClient = None
+    robot: Robot = None
 
     @abstractmethod
-    def execute(self):
+    def execute(self, *args):
         pass
 
 
 def execute_function_for_robot(
         robot: Robot,
-        spot_function: SpotFunction
+        spot_function: SpotFunction,
+        *args
 ):
     robot_state_client = robot.ensure_client(RobotStateClient.default_service_name)
 
@@ -90,7 +92,8 @@ def execute_function_for_robot(
         make_robot_stand(robot)
         spot_function.robot_state_client = robot_state_client
         spot_function.lease_client = lease_client
-        spot_function.execute()
+        spot_function.robot = robot
+        spot_function.execute(args)
         power_off_robot(robot)
 
 
@@ -104,3 +107,14 @@ def power_off_robot(
     robot.power_off(cut_immediately=False, timeout_sec=20)
     assert not robot.is_powered_on(), "Robot power off failed."
     robot.logger.info("Robot safely powered off.")
+
+
+class HelloSpotFunction(SpotFunction):
+    def execute(self, robot: Robot, *args):
+        robot.logger.info("Hello, Spot!")
+
+
+class EchoSpotFunction(SpotFunction):
+    def execute(self, robot: Robot, *args):
+        message_to_echo: str = args[0]
+        robot.logger.info(message_to_echo)
