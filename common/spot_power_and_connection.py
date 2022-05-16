@@ -74,6 +74,16 @@ class SpotFunction(ABC):
     lease_client: bosdyn.client.lease.LeaseClient = None
     robot: Robot = None
 
+    def prepare(
+            self,
+            robot_state_client: RobotStateClient,
+            lease_client: bosdyn.client.lease.LeaseClient,
+            robot: Robot
+    ):
+        self.robot_state_client = robot_state_client
+        self.lease_client = lease_client
+        self.robot = robot
+
     @abstractmethod
     def execute(self, *args):
         pass
@@ -89,12 +99,12 @@ def execute_function_for_robot(
     lease_client = robot.ensure_client(bosdyn.client.lease.LeaseClient.default_service_name)
     with bosdyn.client.lease.LeaseKeepAlive(lease_client, must_acquire=True, return_at_exit=True):
         power_on_robot(robot)
-        make_robot_stand(robot)
-        spot_function.robot_state_client = robot_state_client
-        spot_function.lease_client = lease_client
-        spot_function.robot = robot
-        spot_function.execute(args)
-        power_off_robot(robot)
+        try:
+            make_robot_stand(robot)
+            spot_function.prepare(robot_state_client, lease_client, robot)
+            spot_function.execute(args)
+        finally:
+            power_off_robot(robot)
 
 
 def power_off_robot(
