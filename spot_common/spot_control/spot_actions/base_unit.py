@@ -141,14 +141,8 @@ def make_robot_turn_clockwise(
         robot_state_client: RobotStateClient,
         robot_command_client: RobotCommandClient
 ):
-    make_robot_turn(math.pi*2, robot_state_client, robot_command_client)
-
-
-def make_robot_turn_anticlockwise(
-        robot_state_client: RobotStateClient,
-        robot_command_client: RobotCommandClient
-):
-    make_robot_turn(-(math.pi*2), robot_state_client, robot_command_client)
+    make_robot_turn(math.pi, robot_state_client, robot_command_client)
+    make_robot_turn(math.pi, robot_state_client, robot_command_client)
 
 
 def make_robot_sit_and_stand(
