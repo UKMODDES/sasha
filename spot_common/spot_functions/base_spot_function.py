@@ -55,6 +55,8 @@ class BaseSpotFunction(ABC):
                 make_robot_stand(robot, command_client)
                 self.prepare(robot, robot_state_client, lease_client, command_client)
                 self.execute(options)
+            except Exception as e:
+                robot.logger.error(e)
             finally:
                 power_off_robot(robot)
 
@@ -66,7 +68,7 @@ class BaseSpotFunction(ABC):
     def _add_arguments(self, parser: argparse.ArgumentParser):
         pass
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def main(argv=None):
         pass

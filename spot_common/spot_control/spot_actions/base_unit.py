@@ -6,7 +6,7 @@ from bosdyn.api.robot_command_pb2 import RobotCommand
 from bosdyn.api.spot.robot_command_pb2 import MobilityParams, HINT_AUTO, HINT_SPEED_SELECT_TROT, HINT_CRAWL, HINT_AMBLE, \
     HINT_JOG, HINT_HOP
 from bosdyn.client import Robot, frame_helpers, math_helpers
-from bosdyn.client.frame_helpers import get_se2_a_tform_b, BODY_FRAME_NAME
+from bosdyn.client.frame_helpers import get_se2_a_tform_b, BODY_FRAME_NAME, ODOM_FRAME_NAME
 from bosdyn.client.math_helpers import SE2Pose
 from bosdyn.client.robot_command import RobotCommandClient, blocking_stand, RobotCommandBuilder
 from bosdyn.client.robot_state import RobotStateClient
@@ -60,22 +60,22 @@ def make_robot_take_stance(
 def make_robot_walk_to_pose(
         body_tform_goal: SE2Pose,
         robot_state_client: RobotStateClient,
-        frame_name: str,
         robot_command_client: RobotCommandClient
 ):
+    # robot.logger.info("Commanding robot to take stance...")
     transforms = robot_state_client.get_robot_state().kinematic_state.transforms_snapshot
 
     # We do not want to command this goal in body frame because the body will move, thus shifting
     # our goal. Instead, we transform this offset to get the goal position in the output frame
     # (which will be either odom or vision).
-    out_tform_body = get_se2_a_tform_b(transforms, frame_name, BODY_FRAME_NAME)
+    out_tform_body = get_se2_a_tform_b(transforms, ODOM_FRAME_NAME, BODY_FRAME_NAME)
     out_tform_goal = out_tform_body * body_tform_goal
 
     # Command the robot to go to the goal point in the specified frame. The command will stop at the
     # new position.
     robot_cmd = RobotCommandBuilder.synchro_se2_trajectory_point_command(
         goal_x=out_tform_goal.x, goal_y=out_tform_goal.y, goal_heading=out_tform_goal.angle,
-        frame_name=frame_name, params=RobotCommandBuilder.mobility_params(stair_hint=False))
+        frame_name=ODOM_FRAME_NAME, params=RobotCommandBuilder.mobility_params(stair_hint=False))
     end_time = 10.0
     cmd_id = robot_command_client.robot_command(lease=None, command=robot_cmd,
                                                 end_time_secs=time.time() + end_time)
@@ -97,34 +97,31 @@ def make_robot_walk_to_pose(
 def make_robot_walk_x(
         dx: float,
         robot_state_client: RobotStateClient,
-        frame_name: str,
         robot_command_client: RobotCommandClient
 ):
     # Build the transform for where we want the robot to be relative to where the body currently is.
     body_tform_goal = math_helpers.SE2Pose(x=dx, y=0, angle=0)
-    make_robot_walk_to_pose(body_tform_goal, robot_state_client, frame_name, robot_command_client)
+    make_robot_walk_to_pose(body_tform_goal, robot_state_client, robot_command_client)
 
 
 def make_robot_walk_y(
         dy: float,
         robot_state_client: RobotStateClient,
-        frame_name: str,
         robot_command_client: RobotCommandClient
 ):
     # Build the transform for where we want the robot to be relative to where the body currently is.
     body_tform_goal = math_helpers.SE2Pose(x=0, y=dy, angle=0)
-    make_robot_walk_to_pose(body_tform_goal, robot_state_client, frame_name, robot_command_client)
+    make_robot_walk_to_pose(body_tform_goal, robot_state_client, robot_command_client)
 
 
 def make_robot_turn(
         yaw: float,
         robot_state_client: RobotStateClient,
-        frame_name: str,
         robot_command_client: RobotCommandClient
 ):
     # Build the transform for where we want the robot to be relative to where the body currently is.
     body_tform_goal = math_helpers.SE2Pose(x=0, y=0, angle=yaw)
-    make_robot_walk_to_pose(body_tform_goal, robot_state_client, frame_name, robot_command_client)
+    make_robot_walk_to_pose(body_tform_goal, robot_state_client, robot_command_client)
 
 
 def make_robot_walk_x_y_yaw(
@@ -132,13 +129,12 @@ def make_robot_walk_x_y_yaw(
         dy: float,
         yaw: float,
         robot_state_client: RobotStateClient,
-        frame_name: str,
         robot_command_client: RobotCommandClient
 ):
 
     # Build the transform for where we want the robot to be relative to where the body currently is.
     body_tform_goal = math_helpers.SE2Pose(x=dx, y=dy, angle=yaw)
-    make_robot_walk_to_pose(body_tform_goal, robot_state_client, frame_name, robot_command_client)
+    make_robot_walk_to_pose(body_tform_goal, robot_state_client, robot_command_client)
 
 
 def _issue_command(
