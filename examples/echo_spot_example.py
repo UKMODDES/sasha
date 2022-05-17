@@ -11,13 +11,12 @@ from common.spot_functions.spot_function_execution import execute_function_for_r
 
 
 def main(argv):
-    echo_spot_function = EchoSpotFunction()
-    options = echo_spot_function.parse_arguments(argv)
     try:
         username = "example_username"
         password = "example_password"
         robot = get_connected_robot('HelloSpotClient', username, password)
         echo_spot_function = EchoSpotFunction()
+        options = echo_spot_function.parse_arguments(argv)
         execute_function_for_robot(robot, echo_spot_function, options)
         return True
     except Exception as exc:  # pylint: disable=broad-except

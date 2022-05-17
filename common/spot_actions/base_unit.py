@@ -57,7 +57,7 @@ def make_robot_take_stance(
     robot.logger.info("Robot has taken stance.")
 
 
-def make_robot_walk(
+def make_robot_walk_to_pose(
         body_tform_goal: SE2Pose,
         robot_state_client: RobotStateClient,
         frame_name: str,
@@ -127,7 +127,7 @@ def make_robot_turn(
     make_robot_walk_to_pose(body_tform_goal, robot_state_client, frame_name, robot_command_client)
 
 
-def make_robot_walk_to_pose(
+def make_robot_walk_x_y_yaw(
         dx: float,
         dy: float,
         yaw: float,
@@ -154,7 +154,6 @@ def make_robot_roll_over(
     """Executes the battery-change pose command which causes the robot to sit down if
     standing then roll to its [right]/left side for easier battery changing.
     """
-
     command = RobotCommandBuilder.battery_change_pose_command(
         dir_hint=basic_command_pb2.BatteryChangePoseCommand.Request.HINT_RIGHT)
     _issue_command(command_client, command)
