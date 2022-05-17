@@ -214,6 +214,7 @@ def get_source_list(image_client):
         if source.image_type == ImageSource.IMAGE_TYPE_VISUAL:
             # only append if sensor has corresponding depth sensor
             if source.name in VISUAL_SOURCE_TO_DEPTH_MAP_SOURCE:
+                print(source.name)
                 source_list.append(source.name)
                 source_list.append(VISUAL_SOURCE_TO_DEPTH_MAP_SOURCE[source.name])
     return source_list
@@ -324,9 +325,12 @@ def process_images(model_path, detection_class, detection_threshold, max_process
 
     while True:
         entry = RAW_IMAGES_QUEUE.get()
+#        print("Approx Queue Size", RAW_IMAGES_QUEUE.qsize())
+        print("entry: ", entry)
         for _, capture in entry.items():
             if time.time() - capture['raw_image_time'] > max_processing_delay:
                 num_processed_skips += 1
+                print("Skipping Image Due to Max Processing Delay")
                 continue  # Skip image due to delay
 
             image = capture['cv_image']
@@ -337,6 +341,8 @@ def process_images(model_path, detection_class, detection_threshold, max_process
             confident_object_classes = []
             confident_scores = []
             if len(boxes) == 0:
+                print("No Boxes Found")
+                cv2.imwrite("/app/images/"+str(time.time())+".png", capture['cv_image'])
                 continue
             for box, score, box_class in sorted(zip(boxes, scores, classes), key=lambda x: x[1],
                                                 reverse=True):
@@ -347,13 +353,16 @@ def process_images(model_path, detection_class, detection_threshold, max_process
                     confident_scores.append(score)
                     image = cv2.rectangle(image, (box[1], box[0]), (box[3], box[2]), (255, 0, 0), 2)
 
+
             capture['processed_image_time'] = time.time()
             capture['boxes'] = confident_boxes
             capture['classes'] = confident_object_classes
             capture['scores'] = confident_scores
             capture['cv_image'] = image
+
         try:
             PROCESSED_BOXES_QUEUE.put_nowait(entry)
+            print("Image Put In Queue")
         except Full as exc:
             print(f'PROCESSED_BOXES_QUEUE is full: {exc}')
 
@@ -711,6 +720,7 @@ def main(argv):
             highest_conf_source = _find_highest_conf_source(entry)
             if highest_conf_source is None:
                 # no boxes or scores found
+                print("No Boxes found")
                 continue
             capture_to_use = entry[highest_conf_source]
             raw_time = capture_to_use['raw_image_time']
@@ -732,8 +742,8 @@ def main(argv):
             print(f'Transform for object with confidence {scores[0]}: {world_tform_object}')
             print(f'Process latency: {time.time() - capture_to_use["system_cap_time"]}')
             tag_cmd = get_go_to(world_tform_object, robot_state_task.proto, params_set)
-            #end_time = 15.0
-            end_time = 3.0
+            end_time = 15.0
+            #end_time = 3.0
             if tag_cmd is not None:
                 robot_command_client.robot_command(lease=None, command=tag_cmd,
                                                    end_time_secs=time.time() + end_time)

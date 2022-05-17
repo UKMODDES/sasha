@@ -1,0 +1,17 @@
+imports
+get connected robot from spot_connection.py
+get snippet of execute code and power on and sleep from base_spot_function.py
+get camera image service and source
+make image client
+while balls are there
+	unstow arm
+	look down
+	convert image to cv2
+	get coord
+	convert coordinate to picvec
+	pickup ball
+	move arm drop ball
+	stow arm
+release lease
+
+
