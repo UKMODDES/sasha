@@ -5,7 +5,7 @@ from argparse import Namespace
 import bosdyn
 import bosdyn.client.util
 
-from spot_common.spot_connection import get_connected_robot
+from spot_common.spot_control.spot_connection import get_connected_robot
 from spot_common.spot_functions.base_spot_function import BaseSpotFunction
 
 

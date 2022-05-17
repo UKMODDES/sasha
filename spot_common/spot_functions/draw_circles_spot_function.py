@@ -6,21 +6,16 @@ import bosdyn
 import bosdyn.client
 import bosdyn.client.util
 import numpy as np
-from bosdyn.api import robot_command_pb2, arm_surface_contact_service_pb2, geometry_pb2, arm_surface_contact_pb2, \
+from bosdyn.api import arm_surface_contact_service_pb2, geometry_pb2, arm_surface_contact_pb2, \
     trajectory_pb2
 from bosdyn.client import math_helpers
-from bosdyn.client.arm_surface_contact import ArmSurfaceContactClient
-from bosdyn.client.frame_helpers import get_vision_tform_body, VISION_FRAME_NAME, ODOM_FRAME_NAME, get_a_tform_b, \
-    GRAV_ALIGNED_BODY_FRAME_NAME
-from bosdyn.client.image import ImageClient
 from bosdyn.client.robot_command import RobotCommandBuilder, block_until_arm_arrives
 from bosdyn.client.robot_state import RobotStateClient
 from bosdyn.util import seconds_to_duration
 from bosdyn.client.arm_surface_contact import ArmSurfaceContactClient
 from bosdyn.client.frame_helpers import GRAV_ALIGNED_BODY_FRAME_NAME, ODOM_FRAME_NAME, get_a_tform_b
 
-from spot_common.spot_actions.camera import make_robot_take_picture
-from spot_common.spot_connection import get_connected_robot
+from spot_common.spot_control.spot_connection import get_connected_robot
 from spot_common.spot_functions.base_spot_function import BaseSpotFunction
 
 
