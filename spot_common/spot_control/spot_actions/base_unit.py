@@ -289,9 +289,13 @@ def make_robot_shimmy_number_of_times(
 ):
     for x in range(number_of_times):
         set_robot_orientation(command_client, yaw, roll, pitch, height)
+        time.sleep(0.2)
         set_robot_orientation(command_client, -yaw, roll, -pitch, height)
+        time.sleep(0.2)
         set_robot_orientation(command_client, yaw, -roll, pitch, -height)
+        time.sleep(0.2)
         set_robot_orientation(command_client, -yaw, -roll, -pitch, -height)
+        time.sleep(0.2)
 
 
 def make_robot_reset_height(
