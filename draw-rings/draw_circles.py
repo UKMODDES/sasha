@@ -25,6 +25,8 @@ from bosdyn.util import seconds_to_duration
 from bosdyn.api import (arm_surface_contact_pb2, arm_surface_contact_service_pb2, geometry_pb2,
                         trajectory_pb2)
 from bosdyn.client import math_helpers
+from bosdyn.client.arm_surface_contact import ArmSurfaceContactClient
+from bosdyn.client.frame_helpers import GRAV_ALIGNED_BODY_FRAME_NAME, ODOM_FRAME_NAME, get_a_tform_b
 
 # User-set params
 # duration of the whole move [s]
@@ -90,8 +92,8 @@ def surface_contact(config):
 
 
     # Position of the hand:
-    hand_x_start  = 0.75  # in front of the robot.
-    hand_y_start = -0.14  # centered
+    hand_start_x  = 0.75  # in front of the robot.
+    hand_start_y = -0.14  # centered
     hand_z = 0  # will be ignored since we'll have a force in the Z axis.
 
     force_z = -0.05  # percentage of maximum press force, negative to press down
@@ -140,8 +142,8 @@ def surface_contact(config):
     x_coords=[]
     y_coords=[]
     
-    x_ = np.arange(hand_x_start - radius - 1, hand_x_start + radius + 1, dtype=float)
-    y_ = np.arange(hand_y_start - radius - 1, hand_y_start + radius + 1, dtype=float)
+    x_ = np.arange(hand_start_x - radius - 1, hand_start_x + radius + 1, dtype=float)
+    y_ = np.arange(hand_start_y - radius - 1, hand_start_y + radius + 1, dtype=float)
     x, y = np.where((x_[:, np.newaxis] - hand_start_x) ** 2 + (y_ - hand_start_y) ** 2 <= radius ** 2)
         # x, y = np.where((np.hypot((x_-x0)[:,np.newaxis], y_-y0)<= radius)) # alternative implementation
     for x, y in zip(x_[x], y_[y]):
