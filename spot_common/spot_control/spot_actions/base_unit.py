@@ -143,6 +143,11 @@ def make_robot_walk_in_square(robot_state_client: RobotStateClient, command_clie
     make_robot_walk_x(-dx, robot_state_client, command_client)
     make_robot_walk_y(-dy, robot_state_client, command_client)
 
+
+def make_robot_walk_in_circle(radius: float, robot_state_client: RobotStateClient, command_client: RobotCommandClient):
+    make_robot_walk_x_y_yaw(radius, radius, 2*math.pi, robot_state_client, command_client)
+
+
 def make_robot_turn_clockwise(
         robot_state_client: RobotStateClient,
         robot_command_client: RobotCommandClient
