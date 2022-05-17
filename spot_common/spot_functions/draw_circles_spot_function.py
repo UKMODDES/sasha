@@ -18,7 +18,12 @@ from bosdyn.client.frame_helpers import GRAV_ALIGNED_BODY_FRAME_NAME, ODOM_FRAME
 from spot_common.spot_control.spot_connection import get_connected_robot
 from spot_common.spot_functions.base_spot_function import BaseSpotFunction
 
+radius = 0.06
+hand_z = 0  # will be ignored since we'll have a force in the Z axis.
 
+force_z = -0.05  # percentage of maximum press force, negative to press down
+# be careful setting this too large, you can knock the robot over
+percentage_press = geometry_pb2.Vec3(x=0, y=0, z=force_z)
 
 class DrawCirclesSpotFunction(BaseSpotFunction):
     def _add_arguments(self, parser: argparse.ArgumentParser):
@@ -26,40 +31,14 @@ class DrawCirclesSpotFunction(BaseSpotFunction):
             '-i', '--image_source', default='frontleft_fisheye_image', nargs=1, help=
             'Which camera to use to take the picture.'
         )
-
-    def execute(self, options: Namespace):
-        assert self.robot.has_arm(), "Robot requires an arm to run this example."
-
-        arm_surface_contact_client = self.robot.ensure_client(ArmSurfaceContactClient.default_service_name)
-
-        # Unstow the arm
-        unstow = RobotCommandBuilder.arm_ready_command()
-
-        # Issue the command via the RobotCommandClient
-        unstow_command_id = self.command_client.robot_command(unstow)
-
-        self.robot.logger.info("Unstow command issued.")
-        block_until_arm_arrives(self.command_client, unstow_command_id, 3.0)
-
-        # ----------
-        #
-        # Now we'll use the arm_surface_contact service to do an accurate position move with
-        # some amount of force.
-        #
-
-        # Position of the hand:
-
-        hand_start_x  = 0.75  # in front of the robot.
-        hand_start_y = -0.14  # centered
-        hand_z = 0  # will be ignored since we'll have a force in the Z axis.
-
-        force_z = -0.05  # percentage of maximum press force, negative to press down
-        # be careful setting this too large, you can knock the robot over
-        percentage_press = geometry_pb2.Vec3(x=0, y=0, z=force_z)
-
+        
+    def draw_circle(hand_start_x, hand_start_y, robot_state):
+    
         hand_vec3_start_rt_body = geometry_pb2.Vec3(x=hand_start_x, y=hand_start_y, z=hand_z)
         hand_vec3_end_rt_body = hand_vec3_start_rt_body
-
+        print(hand_start_x)
+        print(hand_start_y)
+        print(radius)
         # We want to point the hand straight down the entire time.
         qw = 0.707
         qx = 0
@@ -73,8 +52,6 @@ class DrawCirclesSpotFunction(BaseSpotFunction):
         body_T_hand2 = geometry_pb2.SE3Pose(position=hand_vec3_end_rt_body,
                                             rotation=body_Q_hand)
 
-        robot_state_client = self.robot.ensure_client(RobotStateClient.default_service_name)
-        robot_state = robot_state_client.get_robot_state()
         odom_T_flat_body = get_a_tform_b(robot_state.kinematic_state.transforms_snapshot,
                                          ODOM_FRAME_NAME, GRAV_ALIGNED_BODY_FRAME_NAME)
         odom_T_hand1 = odom_T_flat_body * math_helpers.SE3Pose.from_obj(body_T_hand1)
@@ -95,7 +72,6 @@ class DrawCirclesSpotFunction(BaseSpotFunction):
         gripper_cmd_packed = RobotCommandBuilder.claw_gripper_open_fraction_command(0)
         gripper_command = gripper_cmd_packed.synchronized_command.gripper_command.claw_gripper_command
 
-        radius = 0.06
         x_coords = []
         y_coords = []
 
@@ -137,6 +113,44 @@ class DrawCirclesSpotFunction(BaseSpotFunction):
             # Send the request
             self.robot.logger.info('Running arm surface contact...')
             arm_surface_contact_client.arm_surface_contact_command(proto)
+
+    def execute(self, options: Namespace):
+        assert self.robot.has_arm(), "Robot requires an arm to run this example."
+
+        arm_surface_contact_client = self.robot.ensure_client(ArmSurfaceContactClient.default_service_name)
+
+        # Unstow the arm
+        unstow = RobotCommandBuilder.arm_ready_command()
+
+        # Issue the command via the RobotCommandClient
+        unstow_command_id = self.command_client.robot_command(unstow)
+
+        self.robot.logger.info("Unstow command issued.")
+        block_until_arm_arrives(self.command_client, unstow_command_id, 3.0)
+
+        starting_x  = 0.75  # in front of the robot.
+        starting_y = -0.14  # centered
+
+        #Draw top left circle
+        draw_circle(starting_x, starting_y, robot_state)
+        
+        #Draw top middle circle
+        draw_circle(starting_x, starting_y-0.14, robot_state)
+        
+        #Draw top right circle
+        draw_circle(starting_x, starting_y-0.28, robot_state)
+        
+        #Draw bottom left circle
+        draw_circle(starting_x-0.07, starting_y-0.07, robot_state)
+        
+        #Draw bottom right circle
+        draw_circle(starting_x-0.07, starting_y-0.14, robot_state)
+    
+        # Power the robot off. By specifying "cut_immediately=False", a safe power off command
+        # is issued to the robot. This will attempt to sit the robot before powering off.
+        robot.power_off(cut_immediately=False, timeout_sec=20)
+        assert not robot.is_powered_on(), "Robot power off failed."
+        robot.logger.info("Robot safely powered off.")
 
     @staticmethod
     def main(argv=None):
