@@ -7,9 +7,9 @@ import bosdyn.client
 import bosdyn.client.util
 from bosdyn.client.image import ImageClient
 
-from common.spot_actions.camera import make_robot_take_picture
-from common.spot_connection import get_connected_robot
-from common.spot_functions.base_spot_function import BaseSpotFunction
+from spot_common.spot_actions.camera import make_robot_take_picture
+from spot_common.spot_connection import get_connected_robot
+from spot_common.spot_functions.base_spot_function import BaseSpotFunction
 
 
 class TakePictureSpotFunction(BaseSpotFunction):

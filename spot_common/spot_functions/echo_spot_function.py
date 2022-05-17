@@ -6,8 +6,8 @@ import bosdyn
 import bosdyn.client
 import bosdyn.client.util
 
-from common.spot_connection import get_connected_robot
-from common.spot_functions.base_spot_function import BaseSpotFunction
+from spot_common.spot_connection import get_connected_robot
+from spot_common.spot_functions.base_spot_function import BaseSpotFunction
 
 
 class EchoSpotFunction(BaseSpotFunction):
