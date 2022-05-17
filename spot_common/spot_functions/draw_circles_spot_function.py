@@ -54,9 +54,9 @@ class DrawCirclesSpotFunction(BaseSpotFunction):
 
         # Position of the hand:
 
-         hand_start_x  = 0.75  # in front of the robot.
-         hand_start_y = -0.14  # centered
-         hand_z = 0  # will be ignored since we'll have a force in the Z axis.
+        hand_start_x  = 0.75  # in front of the robot.
+        hand_start_y = -0.14  # centered
+        hand_z = 0  # will be ignored since we'll have a force in the Z axis.
 
         force_z = -0.05  # percentage of maximum press force, negative to press down
         # be careful setting this too large, you can knock the robot over
