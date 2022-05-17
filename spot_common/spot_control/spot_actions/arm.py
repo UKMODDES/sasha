@@ -1,6 +1,7 @@
 import time
 
-from bosdyn.api import arm_surface_contact_pb2, manipulation_api_pb2, geometry_pb2
+from bosdyn.api import arm_surface_contact_pb2, manipulation_api_pb2, geometry_pb2, arm_command_pb2, \
+    synchronized_command_pb2, robot_command_pb2
 from bosdyn.api.arm_surface_contact_pb2 import ArmSurfaceContact
 from bosdyn.api.geometry_pb2 import Vec3, Vec2
 from bosdyn.api.image_pb2 import Image
@@ -181,3 +182,54 @@ def make_robot_open_gripper(
             ADMITTANCE_SETTING_VERY_STIFF,
         gripper_command=gripper_command)
     return cmd
+
+
+def make_robot_command(arm_joint_traj):
+    """ Helper function to create a RobotCommand from an ArmJointTrajectory.
+        The returned command will be a SynchronizedCommand with an ArmJointMoveCommand
+        filled out to follow the passed in trajectory. """
+
+    joint_move_command = arm_command_pb2.ArmJointMoveCommand.Request(trajectory=arm_joint_traj)
+    arm_command = arm_command_pb2.ArmCommand.Request(arm_joint_move_command=joint_move_command)
+    sync_arm = synchronized_command_pb2.SynchronizedCommand.Request(arm_command=arm_command)
+    arm_sync_robot_cmd = robot_command_pb2.RobotCommand(synchronized_command=sync_arm)
+    return RobotCommandBuilder.build_synchro_command(arm_sync_robot_cmd)
+
+
+def make_robot_move_arm(
+        robot: Robot,
+        command_client: RobotCommandClient,
+        first_point_positions: list,
+        second_point_positions: list,
+        first_point_t=2.0,
+        second_point_t=4.0):
+    sh0 = first_point_positions[0]
+    sh1 = first_point_positions[1]
+    el0 = first_point_positions[2]
+    el1 = first_point_positions[3]
+    wr0 = first_point_positions[4]
+    wr1 = first_point_positions[5]
+    traj_point1 = RobotCommandBuilder.create_arm_joint_trajectory_point(
+        sh0, sh1, el0, el1, wr0, wr1, first_point_t)
+    sh0 = second_point_positions[0]
+    sh1 = second_point_positions[1]
+    el0 = second_point_positions[2]
+    el1 = second_point_positions[3]
+    wr0 = second_point_positions[4]
+    wr1 = second_point_positions[5]
+    # Build the proto for the second trajectory point.
+    traj_point2 = RobotCommandBuilder.create_arm_joint_trajectory_point(
+        sh0, sh1, el0, el1, wr0, wr1, second_point_t)
+    # Build up a proto.
+    arm_joint_traj = arm_command_pb2.ArmJointTrajectory(
+        points=[traj_point1, traj_point2])
+    # Make a RobotCommand
+    command = make_robot_command(arm_joint_traj)
+    # Send the request
+    cmd_id = command_client.robot_command(command)
+    robot.logger.info('Moving arm along 2-point joint trajectory.')
+    # Query for feedback to determine exactly what the planned trajectory is.
+    feedback_resp = command_client.robot_command_feedback(cmd_id)
+    robot.logger.info("Feedback for 2-point joint trajectory")
+    # Wait until the move completes before powering off.
+    block_until_arm_arrives(command_client, cmd_id, second_point_t + 3.0)
