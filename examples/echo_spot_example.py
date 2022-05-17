@@ -11,13 +11,8 @@ from common.spot_functions.spot_function_execution import execute_function_for_r
 
 
 def main(argv):
-    parser = argparse.ArgumentParser()
-    bosdyn.client.util.add_base_arguments(parser)
-    parser.add_argument(
-        '-s', '--string', default='Hello, Spot!', nargs=1, help=
-        'Pass a string to be echoed by Spot.'
-    )
-    options = parser.parse_args(argv)
+    echo_spot_function = EchoSpotFunction()
+    options = echo_spot_function.parse_arguments(argv)
     try:
         username = "example_username"
         password = "example_password"

@@ -15,7 +15,8 @@ def main():
         password = "example_password"
         robot = get_connected_robot('HelloSpotClient', username, password)
         hello_spot_function = HelloSpotFunction()
-        execute_function_for_robot(robot, hello_spot_function)
+        options = hello_spot_function.parse_arguments(argv=None)
+        execute_function_for_robot(robot, hello_spot_function, options)
         return True
     except Exception as exc:  # pylint: disable=broad-except
         logger = bosdyn.client.util.get_logger()

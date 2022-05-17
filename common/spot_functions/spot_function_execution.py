@@ -1,3 +1,5 @@
+from argparse import Namespace
+
 import bosdyn.client
 import bosdyn.client.util
 import bosdyn.client.lease
@@ -13,7 +15,7 @@ from common.spot_power import power_on_robot, power_off_robot
 def execute_function_for_robot(
         robot: Robot,
         spot_function: BaseSpotFunction,
-        *args
+        options: Namespace
 ):
     robot_state_client = robot.ensure_client(RobotStateClient.default_service_name)
 
@@ -24,6 +26,6 @@ def execute_function_for_robot(
             command_client = robot.ensure_client(RobotCommandClient.default_service_name)
             make_robot_stand(robot, command_client)
             spot_function.prepare(robot, robot_state_client, lease_client, command_client)
-            spot_function.execute(args)
+            spot_function.execute(options)
         finally:
             power_off_robot(robot)
