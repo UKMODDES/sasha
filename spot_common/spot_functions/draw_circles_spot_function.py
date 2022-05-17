@@ -16,20 +16,13 @@ from bosdyn.client.image import ImageClient
 from bosdyn.client.robot_command import RobotCommandBuilder, block_until_arm_arrives
 from bosdyn.client.robot_state import RobotStateClient
 from bosdyn.util import seconds_to_duration
+from bosdyn.client.arm_surface_contact import ArmSurfaceContactClient
+from bosdyn.client.frame_helpers import GRAV_ALIGNED_BODY_FRAME_NAME, ODOM_FRAME_NAME, get_a_tform_b
 
 from spot_common.spot_actions.camera import make_robot_take_picture
 from spot_common.spot_connection import get_connected_robot
 from spot_common.spot_functions.base_spot_function import BaseSpotFunction
 
-# User-set params
-# duration of the whole move [s]
-_SECONDS_FULL = 15
-# length of the square the robot walks [m]
-_L_ROBOT_SQUARE = 0.5
-# length of the square the robot walks [m]
-_L_ARM_CIRCLE = 0.4
-# shift the circle that the robot draws in z [m]
-_VERTICAL_SHIFT = 0
 
 
 class DrawCirclesSpotFunction(BaseSpotFunction):
@@ -61,15 +54,15 @@ class DrawCirclesSpotFunction(BaseSpotFunction):
 
         # Position of the hand:
 
-        hand_x_start = 0.75  # in front of the robot.
-        hand_y_start = -0.14  # centered
-        hand_z = 0  # will be ignored since we'll have a force in the Z axis.
+         hand_start_x  = 0.75  # in front of the robot.
+         hand_start_y = -0.14  # centered
+         hand_z = 0  # will be ignored since we'll have a force in the Z axis.
 
         force_z = -0.05  # percentage of maximum press force, negative to press down
         # be careful setting this too large, you can knock the robot over
         percentage_press = geometry_pb2.Vec3(x=0, y=0, z=force_z)
 
-        hand_vec3_start_rt_body = geometry_pb2.Vec3(x=hand_x_start, y=hand_y_start, z=hand_z)
+        hand_vec3_start_rt_body = geometry_pb2.Vec3(x=hand_start_x, y=hand_start_y, z=hand_z)
         hand_vec3_end_rt_body = hand_vec3_start_rt_body
 
         # We want to point the hand straight down the entire time.
@@ -111,15 +104,15 @@ class DrawCirclesSpotFunction(BaseSpotFunction):
         x_coords = []
         y_coords = []
 
-        x_ = np.arange(hand_x_start - radius - 1, hand_x_start + radius + 1, dtype=float)
-        y_ = np.arange(hand_y_start - radius - 1, hand_y_start + radius + 1, dtype=float)
-        x, y = np.where((x_[:, np.newaxis] - hand_x_start) ** 2 + (y_ - hand_y_start) ** 2 <= radius ** 2)
+        x_ = np.arange(hand_start_x - radius - 1, hand_start_x + radius + 1, dtype=float)
+        y_ = np.arange(hand_start_y - radius - 1, hand_start_y + radius + 1, dtype=float)
+        x, y = np.where((x_[:, np.newaxis] - hand_start_x) ** 2 + (y_ - hand_start_y) ** 2 <= radius ** 2)
         # x, y = np.where((np.hypot((x_-x0)[:,np.newaxis], y_-y0)<= radius)) # alternative implementation
         for x, y in zip(x_[x], y_[y]):
             x_coords.append(x)
             y_coords.append(y)
 
-        _N_POINTS = x_coords.size
+        _N_POINTS = len(x_coords)
 
         for ii in range(_N_POINTS + 1):
             cmd = arm_surface_contact_pb2.ArmSurfaceContact.Request(
