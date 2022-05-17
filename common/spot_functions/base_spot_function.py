@@ -36,6 +36,11 @@ class BaseSpotFunction(ABC):
     def _add_arguments(self, parser: argparse.ArgumentParser):
         pass
 
+    @abstractmethod
+    @staticmethod
+    def main(argv=None):
+        pass
+
     def parse_arguments(self, argv) -> Namespace:
         parser = argparse.ArgumentParser()
         bosdyn.client.util.add_base_arguments(parser)
