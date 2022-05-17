@@ -29,7 +29,7 @@ class TakePictureSpotFunction(BaseSpotFunction):
     def main(argv=None):
         try:
             take_picture_spot_function = TakePictureSpotFunction()
-            robot = get_connected_robot('HelloSpotClient', take_picture_spot_function.username, take_picture_spot_function.password)
+            robot = get_connected_robot('image_capture', take_picture_spot_function.username, take_picture_spot_function.password)
             options = take_picture_spot_function.parse_arguments(argv)
             take_picture_spot_function.execute_function_for_robot(robot, options)
             return True
