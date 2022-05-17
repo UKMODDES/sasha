@@ -9,7 +9,7 @@ from bosdyn.api.spot.robot_command_pb2 import MobilityParams, HINT_AUTO, HINT_SP
 from bosdyn.client import Robot, frame_helpers, math_helpers
 from bosdyn.client.frame_helpers import get_se2_a_tform_b, BODY_FRAME_NAME, ODOM_FRAME_NAME
 from bosdyn.client.math_helpers import SE2Pose
-from bosdyn.client.robot_command import RobotCommandClient, blocking_stand, RobotCommandBuilder
+from bosdyn.client.robot_command import RobotCommandClient, blocking_stand, RobotCommandBuilder, blocking_sit
 from bosdyn.client.robot_state import RobotStateClient
 from bosdyn.geometry import EulerZXY
 from numpy.random._examples.cffi.extending import state
@@ -26,6 +26,19 @@ def make_robot_stand(
     robot.logger.info("Commanding robot to stand...")
     blocking_stand(command_client, timeout_sec=10)
     robot.logger.info("Robot standing.")
+
+
+def make_robot_sit(
+        robot: Robot,
+        command_client: RobotCommandClient
+):
+    # Tell the robot to stand up. The command service is used to issue commands to a robot.
+    # The set of valid commands for a robot depends on hardware configuration. See
+    # SpotCommandHelper for more detailed examples on command building. The robot
+    # command service requires timesync between the robot and the client.
+    robot.logger.info("Commanding robot to sit...")
+    blocking_sit(command_client, timeout_sec=10)
+    robot.logger.info("Robot sitting.")
 
 
 def make_robot_take_stance(
@@ -92,7 +105,6 @@ def make_robot_walk_to_pose(
                 traj_feedback.body_movement_status == traj_feedback.BODY_STATUS_SETTLED):
             print("Arrived at the goal.")
             return True
-        time.sleep(1)
 
 
 def make_robot_walk_x(
@@ -129,21 +141,21 @@ def make_robot_turn_clockwise(
         robot_state_client: RobotStateClient,
         robot_command_client: RobotCommandClient
 ):
-    make_robot_turn(math.pi, robot_state_client, robot_command_client)
+    make_robot_turn(math.pi*2, robot_state_client, robot_command_client)
 
 
 def make_robot_turn_anticlockwise(
         robot_state_client: RobotStateClient,
         robot_command_client: RobotCommandClient
 ):
-    make_robot_turn(-math.pi, robot_state_client, robot_command_client)
+    make_robot_turn(-(math.pi*2), robot_state_client, robot_command_client)
 
 
 def make_robot_sit_and_stand(
         robot: Robot,
         command_client: RobotCommandClient
 ):
-    make_robot_sit(command_client)
+    make_robot_sit(robot, command_client)
     make_robot_stand(robot, command_client)
 
 
@@ -186,8 +198,8 @@ def make_robot_walk_left_and_right(
         dy: float,
         number_of_times: int):
     for x in range(number_of_times):
-        make_robot_walk_x(dy, robot_state_client, command_client)
-        make_robot_walk_x(-dy, robot_state_client, command_client)
+        make_robot_walk_y(dy, robot_state_client, command_client)
+        make_robot_walk_y(-dy, robot_state_client, command_client)
 
 
 def _issue_command(
@@ -217,16 +229,6 @@ def make_robot_selfright(
 
     command = RobotCommandBuilder.selfright_command()
     _issue_command(command_client, command)
-
-
-def make_robot_sit(
-        command_client: RobotCommandClient
-):
-    mobility_params = MobilityParams(
-        locomotion_hint=HINT_AUTO, stair_hint=0)
-
-    cmd = RobotCommandBuilder.synchro_sit_command(params=mobility_params)
-    _issue_command(command_client, cmd)
 
 
 def set_robot_to_walk_mode(
@@ -270,6 +272,21 @@ def set_robot_orientation(
     cmd = RobotCommandBuilder.synchro_stand_command(body_height=height,
                                                     footprint_R_body=orientation)
     _issue_command(command_client, cmd)
+
+
+def make_robot_shimmy_number_of_times(
+        command_client: RobotCommandClient,
+        number_of_times: int,
+        yaw=0.0,
+        roll=0.0,
+        pitch=0.0,
+        height=0.0
+):
+    for x in range(number_of_times):
+        set_robot_orientation(command_client, yaw, roll, pitch, height)
+        set_robot_orientation(command_client, -yaw, roll, -pitch, height)
+        set_robot_orientation(command_client, yaw, -roll, pitch, -height)
+        set_robot_orientation(command_client, -yaw, -roll, -pitch, -height)
 
 
 def make_robot_reset_height(
