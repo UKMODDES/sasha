@@ -32,7 +32,7 @@ class DrawCirclesSpotFunction(BaseSpotFunction):
             'Which camera to use to take the picture.'
         )
         
-    def draw_circle(hand_start_x, hand_start_y, robot_state):
+    def draw_circle(hand_start_x, hand_start_y, robot_state, arm_surface_contact_client):
     
         hand_vec3_start_rt_body = geometry_pb2.Vec3(x=hand_start_x, y=hand_start_y, z=hand_z)
         hand_vec3_end_rt_body = hand_vec3_start_rt_body
@@ -118,6 +118,8 @@ class DrawCirclesSpotFunction(BaseSpotFunction):
         assert self.robot.has_arm(), "Robot requires an arm to run this example."
 
         arm_surface_contact_client = self.robot.ensure_client(ArmSurfaceContactClient.default_service_name)
+        robot_state_client = self.robot.ensure_client(RobotStateClient.default_service_name)
+        robot_state = robot_state_client.get_robot_state()
 
         # Unstow the arm
         unstow = RobotCommandBuilder.arm_ready_command()
@@ -132,19 +134,19 @@ class DrawCirclesSpotFunction(BaseSpotFunction):
         starting_y = -0.14  # centered
 
         #Draw top left circle
-        draw_circle(starting_x, starting_y, robot_state)
+        draw_circle(starting_x, starting_y, robot_state, arm_surface_contact_client)
         
         #Draw top middle circle
-        draw_circle(starting_x, starting_y-0.14, robot_state)
+        draw_circle(starting_x, starting_y-0.14, robot_state, arm_surface_contact_client)
         
         #Draw top right circle
-        draw_circle(starting_x, starting_y-0.28, robot_state)
+        draw_circle(starting_x, starting_y-0.28, robot_state, arm_surface_contact_client)
         
         #Draw bottom left circle
-        draw_circle(starting_x-0.07, starting_y-0.07, robot_state)
+        draw_circle(starting_x-0.07, starting_y-0.07, robot_state, arm_surface_contact_client)
         
         #Draw bottom right circle
-        draw_circle(starting_x-0.07, starting_y-0.14, robot_state)
+        draw_circle(starting_x-0.07, starting_y-0.14, robot_state, arm_surface_contact_client)
     
         # Power the robot off. By specifying "cut_immediately=False", a safe power off command
         # is issued to the robot. This will attempt to sit the robot before powering off.
