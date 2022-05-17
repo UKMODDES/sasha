@@ -137,6 +137,12 @@ def make_robot_turn(
     make_robot_walk_to_pose(body_tform_goal, robot_state_client, robot_command_client)
 
 
+def make_robot_walk_in_square(robot_state_client: RobotStateClient, command_client: RobotCommandClient, dx: float, dy: float):
+    make_robot_walk_x(dx, robot_state_client, command_client)
+    make_robot_walk_y(dy, robot_state_client, command_client)
+    make_robot_walk_x(-dx, robot_state_client, command_client)
+    make_robot_walk_y(-dy, robot_state_client, command_client)
+
 def make_robot_turn_clockwise(
         robot_state_client: RobotStateClient,
         robot_command_client: RobotCommandClient
