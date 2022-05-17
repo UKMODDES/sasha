@@ -1,3 +1,4 @@
+import math
 import time
 
 from bosdyn.api import basic_command_pb2
@@ -124,6 +125,37 @@ def make_robot_turn(
     make_robot_walk_to_pose(body_tform_goal, robot_state_client, robot_command_client)
 
 
+def make_robot_turn_clockwise(
+        robot_state_client: RobotStateClient,
+        robot_command_client: RobotCommandClient
+):
+    make_robot_turn(math.pi, robot_state_client, robot_command_client)
+
+
+def make_robot_turn_anticlockwise(
+        robot_state_client: RobotStateClient,
+        robot_command_client: RobotCommandClient
+):
+    make_robot_turn(-math.pi, robot_state_client, robot_command_client)
+
+
+def make_robot_sit_and_stand(
+        robot: Robot,
+        command_client: RobotCommandClient
+):
+    make_robot_sit(command_client)
+    make_robot_stand(robot, command_client)
+
+
+def make_robot_sit_and_stand_a_number_of_times(
+        robot: Robot,
+        command_client: RobotCommandClient,
+        number_of_times: int
+):
+    for x in range(number_of_times):
+        make_robot_sit_and_stand(robot, command_client)
+
+
 def make_robot_walk_x_y_yaw(
         dx: float,
         dy: float,
@@ -135,6 +167,27 @@ def make_robot_walk_x_y_yaw(
     # Build the transform for where we want the robot to be relative to where the body currently is.
     body_tform_goal = math_helpers.SE2Pose(x=dx, y=dy, angle=yaw)
     make_robot_walk_to_pose(body_tform_goal, robot_state_client, robot_command_client)
+
+
+def make_robot_walk_backwards_and_forwards(
+        robot_state_client: RobotStateClient,
+        command_client: RobotCommandClient,
+        dx: float,
+        number_of_times: int
+):
+    for x in range(number_of_times):
+        make_robot_walk_x(dx, robot_state_client, command_client)
+        make_robot_walk_x(-dx, robot_state_client, command_client)
+
+
+def make_robot_walk_left_and_right(
+        robot_state_client: RobotStateClient,
+        command_client: RobotCommandClient,
+        dy: float,
+        number_of_times: int):
+    for x in range(number_of_times):
+        make_robot_walk_x(dy, robot_state_client, command_client)
+        make_robot_walk_x(-dy, robot_state_client, command_client)
 
 
 def _issue_command(
