@@ -8,7 +8,6 @@ import bosdyn.client.util
 
 from common.spot_connection import get_connected_robot
 from common.spot_functions.base_spot_function import BaseSpotFunction
-from common.spot_functions.spot_function_execution import execute_function_for_robot
 
 
 class EchoSpotFunction(BaseSpotFunction):
@@ -25,12 +24,10 @@ class EchoSpotFunction(BaseSpotFunction):
     @staticmethod
     def main(argv=None):
         try:
-            username = "example_username"
-            password = "example_password"
-            robot = get_connected_robot('HelloSpotClient', username, password)
             echo_spot_function = EchoSpotFunction()
+            robot = get_connected_robot('HelloSpotClient', echo_spot_function.username, echo_spot_function.password)
             options = echo_spot_function.parse_arguments(argv)
-            execute_function_for_robot(robot, echo_spot_function, options)
+            echo_spot_function.execute_function_for_robot(robot, options)
             return True
         except Exception as exc:  # pylint: disable=broad-except
             logger = bosdyn.client.util.get_logger()
