@@ -36,11 +36,62 @@ _L_ARM_CIRCLE = 0.4
 # shift the circle that the robot draws in z [m]
 _VERTICAL_SHIFT = 0
 
-def surface_contact():
+def surface_contact(config):
+    sdk = bosdyn.client.create_standard_sdk('ArmSurfaceContactExample')
+
+    robot = sdk.create_robot(config.hostname)
+    bosdyn.client.util.authenticate(robot)
+    robot.time_sync.wait_for_sync()
+
+    assert robot.has_arm(), "Robot requires an arm to run this example."
+
+    arm_surface_contact_client = robot.ensure_client(ArmSurfaceContactClient.default_service_name)
+
+    # Verify the robot is not estopped and that an external application has registered and holds
+    # an estop endpoint.
+    assert not robot.is_estopped(), "Robot is estopped. Please use an external E-Stop client, " \
+                                    "such as the estop SDK example, to configure E-Stop."
+                                    
+    robot_state_client = robot.ensure_client(RobotStateClient.default_service_name)
+
+    lease_client = robot.ensure_client(bosdyn.client.lease.LeaseClient.default_service_name)
+    with bosdyn.client.lease.LeaseKeepAlive(lease_client, must_acquire=True, return_at_exit=True):
+        # Now, we are ready to power on the robot. This call will block until the power
+        # is on. Commands would fail if this did not happen. We can also check that the robot is
+        # powered at any point.
+        robot.logger.info("Powering on robot... This may take a several seconds.")
+        robot.power_on(timeout_sec=20)
+        assert robot.is_powered_on(), "Robot power on failed."
+        robot.logger.info("Robot powered on.")
+
+        # Tell the robot to stand up. The command service is used to issue commands to a robot.
+        # The set of valid commands for a robot depends on hardware configuration. See
+        # SpotCommandHelper for more detailed examples on command building. The robot
+        # command service requires timesync between the robot and the client.
+        robot.logger.info("Commanding robot to stand...")
+        command_client = robot.ensure_client(RobotCommandClient.default_service_name)
+        blocking_stand(command_client, timeout_sec=10)
+        robot.logger.info("Robot standing.")
+
+        # Unstow the arm
+        unstow = RobotCommandBuilder.arm_ready_command()
+
+        # Issue the command via the RobotCommandClient
+        unstow_command_id = command_client.robot_command(unstow)
+
+        robot.logger.info("Unstow command issued.")
+        block_until_arm_arrives(command_client, unstow_command_id, 3.0)
+
+        # ----------
+        #
+        # Now we'll use the arm_surface_contact service to do an accurate position move with
+        # some amount of force.
+        #
+
+
     # Position of the hand:
     hand_x_start  = 0.75  # in front of the robot.
-    hand_y_start = 0  # centered
-    hand_y_end = -0.5  # to the right
+    hand_y_start = -0.14  # centered
     hand_z = 0  # will be ignored since we'll have a force in the Z axis.
 
     force_z = -0.05  # percentage of maximum press force, negative to press down
@@ -63,6 +114,7 @@ def surface_contact():
     body_T_hand2 = geometry_pb2.SE3Pose(position=hand_vec3_end_rt_body,
                                         rotation=body_Q_hand)
 
+    robot_state_client = robot.ensure_client(RobotStateClient.default_service_name)
     robot_state = robot_state_client.get_robot_state()
     odom_T_flat_body = get_a_tform_b(robot_state.kinematic_state.transforms_snapshot,
                                      ODOM_FRAME_NAME, GRAV_ALIGNED_BODY_FRAME_NAME)
@@ -85,9 +137,19 @@ def surface_contact():
     gripper_command = gripper_cmd_packed.synchronized_command.gripper_command.claw_gripper_command
 
     radius = 0.06
-    x_ = np.arange(hand_x_start - radius - 1, hand_x_start + radius + 1, dtype=int)
-    y_ = np.arange(hand_y_start - radius - 1, hand_y_start + radius + 1, dtype=int)
-    _N_POINTS = x_.size
+    x_coords=[]
+    y_coords=[]
+    
+    x_ = np.arange(hand_x_start - radius - 1, hand_x_start + radius + 1, dtype=float)
+    y_ = np.arange(hand_y_start - radius - 1, hand_y_start + radius + 1, dtype=float)
+    x, y = np.where((x_[:, np.newaxis] - hand_start_x) ** 2 + (y_ - hand_start_y) ** 2 <= radius ** 2)
+        # x, y = np.where((np.hypot((x_-x0)[:,np.newaxis], y_-y0)<= radius)) # alternative implementation
+    for x, y in zip(x_[x], y_[y]):
+        x_coords.append(x)
+        y_coords.append(y)
+            
+    
+    _N_POINTS = x_coords.size
 
 
     for ii in range(_N_POINTS + 1):
@@ -292,7 +354,7 @@ def main(argv):
     bosdyn.client.util.add_base_arguments(parser)
     options = parser.parse_args(argv)
     try:
-        surface_contact()
+        surface_contact(options)
         #setup_arm_movement(options)
         return True
     except Exception as exc:  # pylint: disable=broad-except
