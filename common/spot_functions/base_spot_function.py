@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from argparse import Namespace
 
 from bosdyn.client import Robot
 from bosdyn.client.lease import LeaseClient
@@ -25,5 +26,5 @@ class BaseSpotFunction(ABC):
         self.command_client = command_client
 
     @abstractmethod
-    def execute(self, *args):
+    def execute(self, options: Namespace):
         pass
